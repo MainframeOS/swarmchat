@@ -1,17 +1,53 @@
 # SwarmChat protocol
 
-## Envelope
+## Event Metadata 
 
-All messages are wrapped in a JSON object envelope with the following fields:
+All events are wrapped in a JSON object envelope with the following fields:
 
-```js
+```json
 {
-  "protocol": "swarmchat/v1",
+  "protocol": "<protocol name>/<version>",
   "type": "<string handled by protocol>",
-  "nonce": "<random string>",
-  "payload": <JSON>
+  "extensions": "<Optional array of strings>",
+  "utc_timestamp": <number>,
+  "payload": <JSON Object>
 }
 ```
+
+## Message Event
+
+Default message events contain a simple string. Clients are expected to render the raw string, without any markup or styling.
+
+```json
+{
+  "protocol": "swarmchat/v1",
+  "type": "chat_message",
+  "utc_timestamp": 1529686580,
+  "payload": {
+    "message": "<message string>"
+  }
+}
+```
+
+Clients may support `event type extensions`, such as `html` in the following example. 
+
+### Event Type Extension 
+
+```json
+{
+  "protocol": "swarmchat/v1",
+  "type": "chat_message",
+  "extensions": ["html"]
+  "utc_timestamp": 1529686580,
+  "payload": {
+    "message": "<fallback message string>",
+    "html": "<HTML message>"
+  }
+}
+```
+
+A client that does not recognise an extension should fallback to the base extension behaviour, in this case only displaying the `message` contents.
+
 
 ## Peering flow
 
@@ -23,17 +59,17 @@ The way peers discover each other's public key is out of the scope of this proto
 ### Contact request
 
 Before being able to send chat messages, a peer must accept the user as a contact. To send a request, the user must know the peer's public key, and send the following message in the topic retrieved by calling `pss_stringToTopic` with the peer's public key.
-The `address` provides the peers with the node's overlay address, allowing to set a specific "darkness" to the communications. If not provided, it should default to `0x`.
+The `overlay_address` provides the peers with the node's overlay address, allowing to set a specific "darkness" to the communications. If not provided, it should default to `0x`.
 The `username` can be provided for display purposes, and the `message` can be provided by the user as an introduction.
 
-```js
+```json
 {
   "protocol": "swarmchat/v1",
   "type": "contact_request",
-  "nonce": "<random string>",
+  "utc_timestamp": 1529686580,
   "payload": {
     "topic": "<topic hex>",
-    "address": "<optional address hex>",
+    "overlay_address": "<optional address hex>",
     "username": "<optional display name>",
     "message": "<optional contact message>"
   }
@@ -45,14 +81,14 @@ The `username` can be provided for display purposes, and the `message` can be pr
 When receiving a contact response, a node may simply ignore the message, or send a `"contact": false` payload to decline the invitation.
 If the user accepts the contact request, the client should start subscribing to the provided `topic` from the contact request, before sending the contact response payload with `"contact": true` and optionally the `username` and node's `address`.
 
-```js
+```json
 {
   "protocol": "swarmchat/v1",
   "type": "contact_response",
-  "nonce": "<random string>",
+  "utc_timestamp": 1529686580,
   "payload": {
     "contact": Boolean,
-    "address": "<optional address hex>",
+    "overlay_address": "<optional address hex>",
     "username": "<optional display name>"
   }
 }
@@ -60,48 +96,17 @@ If the user accepts the contact request, the client should start subscribing to 
 
 ### Contact information
 
-After nodes have been added as contacts, they can send or receive contact information messages in the shared topic they communicate, in order to update their information, such as their `username` or overlay `address`.
+After nodes have been added as contacts, they can send or receive contact information events in the shared topic they communicate, in order to update their information, such as their `username` or overlay `address`.
 
-```js
+```json
 {
   "protocol": "swarmchat/v1",
   "type": "contact_info",
-  "nonce": "<random string>",
+  "utc_timestamp": 1529686580,
   "payload": {
-    "address": "<optional address hex>",
+    "overlay_address": "<optional address hex>",
     "username": "<optional display name>"
   }
 }
 ```
 
-## Chat messages
-
-Once nodes are connected to a shared topic, they can send text messages to each other. By default a message should be a simple string, but clients might support additional protocols, such as `html` in the following example.
-A client that does not recognise a protocol might alert the user about its limited capabilities, and fallback to the basic protocol behaviour, in this case only displaying the `message` contents.
-
-### Text message
-
-```js
-{
-  "protocol": "swarmchat/v1",
-  "type": "chat_message",
-  "nonce": "<random string>",
-  "payload": {
-    "message": "<message string>"
-  }
-}
-```
-
-### Custom protocol message
-
-```js
-{
-  "protocol": "swarmchat/v1+html",
-  "type": "chat_message",
-  "nonce": "<random string>",
-  "payload": {
-    "message": "<message string>",
-    "html": "<HTML-formatted message>"
-  }
-}
-```
