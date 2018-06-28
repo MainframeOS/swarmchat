@@ -1,0 +1,26 @@
+{
+  "name": "dapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@mainframe/rpc-ws-browser": "^0.2.0",
+    "@mainframe/utils-hex": "^0.1.0",
+    "erebos-api-pss": "^0.3.0",
+    "react": "^16.4.1",
+    "react-art": "^16.4.1",
+    "react-dom": "^16.4.1",
+    "react-modal": "^3.4.5",
+    "react-native-web": "^0.8.4",
+    "react-scripts": "1.1.4",
+    "rxjs": "^6.2.1"
+  },
+  "devDependencies": {
+    "flow-bin": "^0.75.0"
+  }
+}
