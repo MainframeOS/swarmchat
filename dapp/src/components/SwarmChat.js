@@ -97,7 +97,9 @@ export default class SwarmChatApp extends Component<{}, State> {
       <View style={[sharedStyles.viewCenter, styles.root]}>
         <Text style={styles.title}>SwarmChat</Text>
         <View style={styles.form}>
-          {step == 'setup_failed' ? <FormError message={errorMessage} /> : null}
+          {step === 'setup_failed' ? (
+            <FormError message={errorMessage} />
+          ) : null}
           <Text>Swarm WebSocket URL:</Text>
           <FormInput
             onChangeText={this.onChangeURL}

@@ -1,6 +1,6 @@
 // @flow
 
-import React, { Component, Fragment } from 'react'
+import React, { PureComponent, Fragment } from 'react'
 import {
   Button,
   ScrollView,
@@ -65,7 +65,7 @@ type Props = {
   selectedKey?: ?hex,
 }
 
-export default class ContactsList extends Component<Props> {
+export default class ContactsList extends PureComponent<Props> {
   renderGroup(title: string, contacts: Array<Contact>) {
     if (contacts.length === 0) {
       return null
@@ -110,7 +110,6 @@ export default class ContactsList extends Component<Props> {
 
   render() {
     const { contacts, onOpenInviteModal } = this.props
-
     const contactsList = Object.values(contacts)
 
     let contents = null

@@ -3,10 +3,16 @@
 import type { hex } from '@mainframe/utils-hex'
 import React, { Component } from 'react'
 import Modal from 'react-modal'
-import { Button, StyleSheet, Text, View } from 'react-native-web'
+import {
+  Button,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native-web'
 import type { Subscription } from 'rxjs'
 
-import { getAppData, setAppData } from '../store'
+import { getAppData } from '../store'
 import type { Contacts } from '../types'
 
 import type {
@@ -15,11 +21,12 @@ import type {
 } from '../lib/SwarmChat'
 
 import Avatar from './Avatar'
+import ContactScreen from './ContactScreen'
 import ContactsList from './ContactsList'
 import FormError from './FormError'
 import FormInput from './FormInput'
 import Loader from './Loader'
-import sharedStyles, { COLORS } from './styles'
+import { COLORS } from './styles'
 
 const PUBLIC_KEY_RE = /^0x[0-9a-f]{130}$/
 
@@ -47,6 +54,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
   },
+  modalSection: {
+    paddingVertical: 5,
+  },
 })
 
 type State = {
@@ -56,6 +66,7 @@ type State = {
   inviteModalOpen: boolean,
   publickKey?: hex,
   selectedKey?: hex,
+  settingsModalOpen: boolean,
   username: string,
 }
 
@@ -66,6 +77,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     contactKey: '',
     contacts: {},
     inviteModalOpen: false,
+    settingsModalOpen: false,
     username: '',
   }
 
@@ -92,12 +104,11 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   }
 
   onReceiveContactEvent = (ev: IncomingContactEvent) => {
-    console.log('received contact event', ev)
     this.setState(({ contacts }) => {
       const existing = contacts[ev.key]
       if (
         ev.type === 'contact_request' &&
-        (existing == null || existing.state === 'received_pending')
+        (existing == null || existing.type === 'received_pending')
       ) {
         // New contact or update existing with new payload
         return {
@@ -108,14 +119,14 @@ export default class App extends Component<{ client: SwarmChat }, State> {
               type: 'received_pending',
               topic: ev.payload.topic,
               username: ev.payload.username,
+              address: ev.payload.overlay_address,
             },
           },
         }
       } else if (
         ev.type === 'contact_response' &&
         existing != null &&
-        (existing.state === 'sent_declined' ||
-          existing.state === 'sent_pending')
+        (existing.type === 'sent_declined' || existing.type === 'sent_pending')
       ) {
         // Response from contact, set type to "added" or "sent_declined" accordingly
         return {
@@ -125,6 +136,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
               ...existing,
               type: ev.payload.contact === true ? 'added' : 'sent_declined',
               username: ev.payload.username,
+              address: ev.payload.overlay_address,
             },
           },
         }
@@ -141,7 +153,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     this.setState({ username: value })
   }
 
-  onSubmitContact = async () => {
+  onSubmitContactRequest = async () => {
     const { contactKey, publicKey, username } = this.state
     if (contactKey.length === 0) {
       return
@@ -174,6 +186,26 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     }
   }
 
+  sendContactResponse = async (key: hex, accepted: boolean) => {
+    await this.props.client.sendContactResponse(key, accepted, {
+      username: this.state.username,
+    })
+    // TODO: if accepted, also join shared topic
+
+    this.setState(({ contacts }) => {
+      const existing = contacts[key]
+      return {
+        contacts: {
+          ...contacts,
+          [key]: {
+            ...existing,
+            type: accepted ? 'added' : 'received_declined',
+          },
+        },
+      }
+    })
+  }
+
   onOpenInviteModal = () => {
     this.setState({ inviteModalOpen: true })
   }
@@ -182,8 +214,38 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     this.setState({ inviteModalOpen: false })
   }
 
+  onOpenSettingsModal = () => {
+    this.setState({ settingsModalOpen: true })
+  }
+
+  onCloseSettingsModal = () => {
+    this.setState({ settingsModalOpen: false })
+  }
+
   onSelectKey = (selectedKey: hex) => {
     this.setState({ selectedKey })
+  }
+
+  onAcceptContact = async () => {
+    const { selectedKey } = this.state
+    if (selectedKey !== null) {
+      await this.sendContactResponse(selectedKey, true)
+    }
+  }
+
+  onDeclineContact = async () => {
+    const { selectedKey } = this.state
+    if (selectedKey !== null) {
+      await this.sendContactResponse(selectedKey, false)
+    }
+  }
+
+  onResendContactRequest = async () => {
+    const { selectedKey, username } = this.state
+    if (selectedKey !== null) {
+      const data = username ? { username } : undefined
+      await this.props.client.sendContactRequest(selectedKey, data)
+    }
   }
 
   render() {
@@ -194,6 +256,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
       inviteModalOpen,
       publicKey,
       selectedKey,
+      settingsModalOpen,
       username,
     } = this.state
 
@@ -201,15 +264,26 @@ export default class App extends Component<{ client: SwarmChat }, State> {
       return <Loader />
     }
 
+    const content = selectedKey ? (
+      <ContactScreen
+        contact={contacts[selectedKey]}
+        onAcceptContact={this.onAcceptContact}
+        onDeclineContact={this.onDeclineContact}
+        onResendContactRequest={this.onResendContactRequest}
+      />
+    ) : null // TODO: default screen
+
     return (
       <View style={styles.root}>
         <View style={styles.sidebar}>
-          <View style={styles.sidebarHeader}>
+          <TouchableOpacity
+            onPress={this.onOpenSettingsModal}
+            style={styles.sidebarHeader}>
             <Avatar publicKey={publicKey} size="large" />
             <Text numberOfLines={1} style={styles.sidebarHeaderText}>
               &nbsp;{username || publicKey}
             </Text>
-          </View>
+          </TouchableOpacity>
           <ContactsList
             contacts={contacts}
             onOpenInviteModal={this.onOpenInviteModal}
@@ -217,18 +291,16 @@ export default class App extends Component<{ client: SwarmChat }, State> {
             selectedKey={selectedKey}
           />
         </View>
-        <View style={styles.content}>
-          <Text>Hello {publicKey}</Text>
-        </View>
+        <View style={styles.content}>{content}</View>
         <Modal
           isOpen={inviteModalOpen}
           onRequestClose={this.onCloseInviteModal}>
           <FormError message={inviteErrorMessage} />
           <View>
-            <Text>Contact key:</Text>
+            <Text>Contact public key:</Text>
             <FormInput
               onChangeText={this.onChangeContactKey}
-              onSubmitEditing={this.onSubmitContact}
+              onSubmitEditing={this.onSubmitContactRequest}
               value={contactKey}
             />
           </View>
@@ -236,15 +308,31 @@ export default class App extends Component<{ client: SwarmChat }, State> {
             <Text>Your username (optional):</Text>
             <FormInput
               onChangeText={this.onChangeUsername}
-              onSubmitEditing={this.onSubmitContact}
+              onSubmitEditing={this.onSubmitContactRequest}
               value={username}
             />
           </View>
           <Button
             color={COLORS.BUTTON_PRIMARY}
             disabled={contactKey.length === 0}
-            onPress={this.onSubmitContact}
+            onPress={this.onSubmitContactRequest}
             title="Invite contact"
+          />
+        </Modal>
+        <Modal
+          isOpen={settingsModalOpen}
+          onRequestClose={this.onCloseSettingsModal}>
+          <View style={styles.modalSection}>
+            <Text>Your public key: {publicKey}</Text>
+          </View>
+          <View style={styles.modalSection}>
+            <Text>Your username (optional):</Text>
+            <FormInput onChangeText={this.onChangeUsername} value={username} />
+          </View>
+          <Button
+            color={COLORS.BLUE_SWARM}
+            onPress={this.onCloseSettingsModal}
+            title="Close"
           />
         </Modal>
       </View>

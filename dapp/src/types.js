@@ -14,6 +14,7 @@ export type Contact = {
   type: ContactState,
   topic: hex,
   username?: ?string,
+  address?: ?hex,
 }
 
 export type Contacts = { [key: hex]: Contact }
