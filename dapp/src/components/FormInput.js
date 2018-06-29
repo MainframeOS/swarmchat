@@ -3,12 +3,15 @@
 import React from 'react'
 import { StyleSheet, TextInput } from 'react-native-web'
 
+import { COLORS } from './styles'
+
 const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
-    borderColor: '#cccccc',
+    borderColor: COLORS.BLUE_SWARM,
     padding: 5,
     marginBottom: 5,
+    borderRadius: 2,
   },
 })
 

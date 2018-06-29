@@ -4,7 +4,7 @@ import createWebSocketRPC from '@mainframe/rpc-ws-browser'
 import { decodeHex, encodeHex, type hex } from '@mainframe/utils-hex'
 import PssAPI from 'erebos-api-pss'
 import type { Observable } from 'rxjs'
-import { map, filter, tap } from 'rxjs/operators'
+import { map, filter } from 'rxjs/operators'
 
 import { createEvent, type SwarmEvent } from './SwarmEvent'
 
@@ -100,19 +100,13 @@ export default class SwarmChat {
     const { publicKey } = await this.getOwnInfo()
     const topic = await this._pss.stringToTopic(publicKey)
     const sub = await this._pss.createTopicSubscription(topic)
-    console.log('created contact topic sub', topic)
     return sub.pipe(
-      tap(ev => {
-        console.log('contact sub received event', ev)
-      }),
       map(decodePssEvent),
-      tap(ev => {
-        console.log('contact sub decoded event', ev)
-      }),
       filter((event: IncomingProtocolEvent) => {
         return (
           event.data.protocol === PROTOCOL &&
-          (event.data.type === 'contact_request' ||
+          ((event.data.type === 'contact_request' &&
+            event.data.payload.topic != null) ||
             event.data.type === 'contact_response')
         )
       }),
@@ -123,9 +117,6 @@ export default class SwarmChat {
           payload: event.data.payload,
         }),
       ),
-      tap(ev => {
-        console.log('contact sub incoming event', ev)
-      }),
     )
   }
 

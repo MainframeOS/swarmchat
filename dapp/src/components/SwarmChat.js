@@ -1,29 +1,30 @@
 // @flow
 
 import React, { Component } from 'react'
-import { AsyncStorage, Button, StyleSheet, Text, View } from 'react-native-web'
+import { Button, StyleSheet, Text, View } from 'react-native-web'
 
+import { getSwarmURL, setSwarmURL } from '../store'
 import SwarmChat from '../lib/SwarmChat'
 
 import App from './App'
 import FormError from './FormError'
 import FormInput from './FormInput'
 import Loader from './Loader'
+import sharedStyles, { COLORS } from './styles'
 
 const styles = StyleSheet.create({
   root: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: COLORS.BACKGROUND_CONTRAST,
   },
   form: {
     alignSelf: 'center',
+    backgroundColor: COLORS.BACKGROUND,
     width: 400,
-    borderColor: '#000000',
-    borderWidth: 1,
     padding: 10,
+    borderRadius: 10,
   },
   title: {
+    color: COLORS.TEXT_CONTRAST,
     fontSize: 32,
   },
 })
@@ -31,8 +32,8 @@ const styles = StyleSheet.create({
 type Step = 'input_url' | 'ready' | 'setup' | 'setup_failed'
 
 type State = {
+  client?: SwarmChat,
   errorMessage?: ?string,
-  lib?: SwarmChat,
   step: Step,
   url: string,
 }
@@ -43,11 +44,11 @@ export default class SwarmChatApp extends Component<{}, State> {
     url: 'ws://localhost:8546',
   }
 
-  async createLib(url): boolean {
+  async createClient(url): boolean {
     try {
-      const lib = new SwarmChat(url)
-      await lib.getOwnInfo()
-      this.setState({ step: 'ready', lib })
+      const client = new SwarmChat(url)
+      await client.getOwnInfo()
+      this.setState({ step: 'ready', client })
       return true
     } catch (err) {
       this.setState({ step: 'setup_failed', errorMessage: err.message, url })
@@ -56,11 +57,11 @@ export default class SwarmChatApp extends Component<{}, State> {
   }
 
   async setup() {
-    const swarmURL = await AsyncStorage.getItem('swarm_url')
+    const swarmURL = await getSwarmURL()
     if (swarmURL == null) {
       this.setState({ step: 'input_url' })
     } else {
-      await this.createLib(swarmURL)
+      await this.createClient(swarmURL)
     }
   }
 
@@ -71,9 +72,9 @@ export default class SwarmChatApp extends Component<{}, State> {
   onSubmit = async () => {
     const { url } = this.state
     if (url.length > 0) {
-      const created = await this.createLib(url)
+      const created = await this.createClient(url)
       if (created) {
-        await AsyncStorage.setItem('swarm_url', url)
+        await setSwarmURL(url)
       }
     }
   }
@@ -83,17 +84,17 @@ export default class SwarmChatApp extends Component<{}, State> {
   }
 
   render() {
-    const { errorMessage, lib, step, url } = this.state
+    const { client, errorMessage, step, url } = this.state
 
     if (step === 'setup') {
       return <Loader />
     }
     if (step === 'ready') {
-      return <App lib={lib} />
+      return <App client={client} />
     }
 
     return (
-      <View style={styles.root}>
+      <View style={[sharedStyles.viewCenter, styles.root]}>
         <Text style={styles.title}>SwarmChat</Text>
         <View style={styles.form}>
           {step == 'setup_failed' ? <FormError message={errorMessage} /> : null}
@@ -104,6 +105,7 @@ export default class SwarmChatApp extends Component<{}, State> {
             value={url}
           />
           <Button
+            color={COLORS.BUTTON_PRIMARY}
             disabled={url.length === 0}
             onPress={this.onSubmit}
             title="Connect"

@@ -1,19 +1,13 @@
 // @flow
 
 import React from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native-web'
+import { ActivityIndicator, View } from 'react-native-web'
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-})
+import sharedStyles, { COLORS } from './styles'
 
 const Loader = () => (
-  <View style={styles.root}>
-    <ActivityIndicator size="large" />
+  <View style={sharedStyles.viewCenter}>
+    <ActivityIndicator color={COLORS.BLUE_SWARM} size="large" />
   </View>
 )
 

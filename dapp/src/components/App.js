@@ -3,17 +3,23 @@
 import type { hex } from '@mainframe/utils-hex'
 import React, { Component } from 'react'
 import Modal from 'react-modal'
-import { AsyncStorage, Button, StyleSheet, Text, View } from 'react-native-web'
+import { Button, StyleSheet, Text, View } from 'react-native-web'
 import type { Subscription } from 'rxjs'
+
+import { getAppData, setAppData } from '../store'
+import type { Contacts } from '../types'
 
 import type {
   default as SwarmChat,
   IncomingContactEvent,
 } from '../lib/SwarmChat'
 
+import Avatar from './Avatar'
+import ContactsList from './ContactsList'
 import FormError from './FormError'
 import FormInput from './FormInput'
 import Loader from './Loader'
+import sharedStyles, { COLORS } from './styles'
 
 const PUBLIC_KEY_RE = /^0x[0-9a-f]{130}$/
 
@@ -25,7 +31,17 @@ const styles = StyleSheet.create({
   sidebar: {
     width: 200,
     flexDirection: 'column',
-    backgroundColor: '#333333',
+    backgroundColor: COLORS.BACKGROUND_CONTRAST,
+  },
+  sidebarHeader: {
+    padding: 5,
+    flexDirection: 'row',
+  },
+  sidebarHeaderText: {
+    fontSize: 18,
+    lineHeight: 48,
+    color: COLORS.TEXT_CONTRAST,
+    textAlign: 'center',
   },
   content: {
     flex: 1,
@@ -33,25 +49,17 @@ const styles = StyleSheet.create({
   },
 })
 
-type ContactState = 'contact' | 'received' | 'sent'
-
-type Contact = {
-  key: hex,
-  type: ContactState,
-  topic: hex,
-  username?: ?string,
-}
-
 type State = {
   contactKey: string,
-  contacts: { [key: hex]: Contact },
+  contacts: Contacts,
   inviteErrorMessage?: ?string,
   inviteModalOpen: boolean,
   publickKey?: hex,
+  selectedKey?: hex,
   username: string,
 }
 
-export default class App extends Component<{ lib: SwarmChat }, State> {
+export default class App extends Component<{ client: SwarmChat }, State> {
   _sub: ?Subscription
 
   state = {
@@ -62,23 +70,13 @@ export default class App extends Component<{ lib: SwarmChat }, State> {
   }
 
   async setup() {
-    const { lib } = this.props
-    const { publicKey } = await lib.getOwnInfo()
+    const { client } = this.props
+    const { publicKey } = await client.getOwnInfo()
     const [appData, contactsSub] = await Promise.all([
-      AsyncStorage.getItem(`swarmchat:${publicKey}:appData`),
-      lib.createContactSubscription(),
+      getAppData(publicKey),
+      client.createContactSubscription(),
     ])
-
-    let state = {}
-    if (appData != null) {
-      try {
-        state = JSON.parse(appData)
-      } catch (err) {
-        console.warn(err)
-      }
-    }
-
-    this.setState({ ...state, publicKey }, () => {
+    this.setState({ ...appData, publicKey }, () => {
       this._sub = contactsSub.subscribe(this.onReceiveContactEvent)
     })
   }
@@ -95,7 +93,44 @@ export default class App extends Component<{ lib: SwarmChat }, State> {
 
   onReceiveContactEvent = (ev: IncomingContactEvent) => {
     console.log('received contact event', ev)
-    // TODO: update contacts object in state according to event
+    this.setState(({ contacts }) => {
+      const existing = contacts[ev.key]
+      if (
+        ev.type === 'contact_request' &&
+        (existing == null || existing.state === 'received_pending')
+      ) {
+        // New contact or update existing with new payload
+        return {
+          contacts: {
+            ...contacts,
+            [ev.key]: {
+              key: ev.key,
+              type: 'received_pending',
+              topic: ev.payload.topic,
+              username: ev.payload.username,
+            },
+          },
+        }
+      } else if (
+        ev.type === 'contact_response' &&
+        existing != null &&
+        (existing.state === 'sent_declined' ||
+          existing.state === 'sent_pending')
+      ) {
+        // Response from contact, set type to "added" or "sent_declined" accordingly
+        return {
+          contacts: {
+            ...contacts,
+            [ev.key]: {
+              ...existing,
+              type: ev.payload.contact === true ? 'added' : 'sent_declined',
+              username: ev.payload.username,
+            },
+          },
+        }
+      }
+      return null
+    })
   }
 
   onChangeContactKey = (value: string) => {
@@ -122,9 +157,20 @@ export default class App extends Component<{ lib: SwarmChat }, State> {
           'Invalid contact key: must be an hexadecimal string prefixed with "0x"',
       })
     } else {
+      this.setState({ inviteModalOpen: false })
       const data = username.length > 0 ? { username } : undefined
-      const topic = await this.props.lib.sendContactRequest(contactKey, data)
-      // TODO: add contact to local state
+      const topic = await this.props.client.sendContactRequest(contactKey, data)
+      this.setState(({ contacts }) => ({
+        contactKey: '',
+        contacts: {
+          ...contacts,
+          [contactKey]: {
+            key: contactKey,
+            type: 'sent_pending',
+            topic,
+          },
+        },
+      }))
     }
   }
 
@@ -136,25 +182,43 @@ export default class App extends Component<{ lib: SwarmChat }, State> {
     this.setState({ inviteModalOpen: false })
   }
 
+  onSelectKey = (selectedKey: hex) => {
+    this.setState({ selectedKey })
+  }
+
   render() {
     const {
       contactKey,
+      contacts,
       inviteErrorMessage,
       inviteModalOpen,
       publicKey,
+      selectedKey,
       username,
     } = this.state
 
-    return publicKey == null ? (
-      <Loader />
-    ) : (
+    if (publicKey == null) {
+      return <Loader />
+    }
+
+    return (
       <View style={styles.root}>
         <View style={styles.sidebar}>
-          <Text>side</Text>
+          <View style={styles.sidebarHeader}>
+            <Avatar publicKey={publicKey} size="large" />
+            <Text numberOfLines={1} style={styles.sidebarHeaderText}>
+              &nbsp;{username || publicKey}
+            </Text>
+          </View>
+          <ContactsList
+            contacts={contacts}
+            onOpenInviteModal={this.onOpenInviteModal}
+            onSelectKey={this.onSelectKey}
+            selectedKey={selectedKey}
+          />
         </View>
         <View style={styles.content}>
           <Text>Hello {publicKey}</Text>
-          <Button onPress={this.onOpenInviteModal} title="Invite contact" />
         </View>
         <Modal
           isOpen={inviteModalOpen}
@@ -177,9 +241,10 @@ export default class App extends Component<{ lib: SwarmChat }, State> {
             />
           </View>
           <Button
+            color={COLORS.BUTTON_PRIMARY}
             disabled={contactKey.length === 0}
             onPress={this.onSubmitContact}
-            title="Invite"
+            title="Invite contact"
           />
         </Modal>
       </View>

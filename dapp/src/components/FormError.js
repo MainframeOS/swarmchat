@@ -3,17 +3,14 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native-web'
 
-const COLOR = '#d72323'
+import { COLORS } from './styles'
 
 const styles = StyleSheet.create({
   view: {
-    borderColor: COLOR,
-    borderWidth: 2,
-    padding: 5,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   text: {
-    color: COLOR,
+    color: COLORS.TEXT_ERROR,
     fontWeight: 'bold',
   },
 })
