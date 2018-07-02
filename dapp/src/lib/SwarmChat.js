@@ -22,6 +22,19 @@ export type IncomingProtocolEvent = {
   data: SwarmEvent,
 }
 
+export type ChatMessagePayload = {
+  text: string,
+}
+
+export type IncomingChatMessage = {
+  type: 'chat_message',
+  key: hex,
+  utc_timestamp: number,
+  payload: ChatMessagePayload,
+}
+
+export type IncomingChatEvent = IncomingChatMessage
+
 export type ContactRequestPayload = {
   topic: hex,
   overlay_address?: hex,
@@ -51,7 +64,7 @@ export type IncomingContactEvent =
   | IncomingContactRequest
   | IncomingContactResponse
 
-export type IncomingEvent = IncomingContactEvent
+export type IncomingEvent = IncomingChatEvent | IncomingContactEvent
 
 export type OwnInfo = {
   publicKey: hex,
@@ -96,6 +109,35 @@ export default class SwarmChat {
     return this._ownInfo
   }
 
+  async createChatSubscription(
+    contactKey: hex,
+    topic: hex,
+  ): Promise<Observable<IncomingChatEvent>> {
+    const [sub] = await Promise.all([
+      this._pss.createTopicSubscription(topic),
+      this._pss.setPeerPublicKey(contactKey, topic),
+    ])
+    return sub.pipe(
+      map(decodePssEvent),
+      filter((event: IncomingProtocolEvent) => {
+        return (
+          event.data.protocol === PROTOCOL &&
+          event.data.type === 'chat_message' &&
+          event.data.payload != null
+        )
+      }),
+      map(
+        // $FlowFixMe: polymorphic type
+        (event: IncomingProtocolEvent): IncomingChatEvent => ({
+          key: event.key,
+          type: event.data.type,
+          utc_timestamp: event.data.utc_timestamp,
+          payload: event.data.payload,
+        }),
+      ),
+    )
+  }
+
   async createContactSubscription(): Promise<Observable<IncomingContactEvent>> {
     const { publicKey } = await this.getOwnInfo()
     const topic = await this._pss.stringToTopic(publicKey)
@@ -122,6 +164,15 @@ export default class SwarmChat {
     )
   }
 
+  async sendChatMessage(
+    key: hex,
+    topic: hex,
+    payload: ChatMessagePayload,
+  ): Promise<void> {
+    const message = createPssMessage('chat_message', payload)
+    await this._pss.sendAsym(key, topic, message)
+  }
+
   async sendContactRequest(
     key: hex,
     data?: { username?: string, message?: string } = {},
@@ -131,10 +182,7 @@ export default class SwarmChat {
       this._pss.stringToTopic(key),
       this._pss.stringToTopic(createRandomString()),
     ])
-    await Promise.all([
-      this._pss.setPeerPublicKey(key, contactTopic),
-      this._pss.setPeerPublicKey(key, sharedTopic),
-    ])
+    await this._pss.setPeerPublicKey(key, contactTopic)
     const message = createPssMessage('contact_request', {
       ...data,
       topic: sharedTopic,

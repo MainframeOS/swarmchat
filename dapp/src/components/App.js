@@ -1,6 +1,7 @@
 // @flow
 
 import { hexType, type hex } from '@mainframe/utils-hex'
+import sum from 'hash-sum'
 import React, { Component } from 'react'
 import Modal from 'react-modal'
 import {
@@ -13,10 +14,11 @@ import {
 import type { Subscription } from 'rxjs'
 
 import { getAppData, setAppData } from '../store'
-import type { Contacts } from '../types'
+import type { Chats, Contact, Contacts } from '../types'
 
 import type {
   default as SwarmChat,
+  IncomingChatEvent,
   IncomingContactEvent,
 } from '../lib/SwarmChat'
 
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
 })
 
 type State = {
+  chats: Chats,
   contactKey: string,
   contacts: Contacts,
   inviteErrorMessage: ?string,
@@ -71,9 +74,11 @@ type State = {
 }
 
 export default class App extends Component<{ client: SwarmChat }, State> {
-  _sub: ?Subscription
+  _chatSubs: { [key: string]: Subscription } = {}
+  _contactSub: ?Subscription
 
   state = {
+    chats: {},
     contactKey: '',
     contacts: {},
     inviteErrorMessage: undefined,
@@ -92,17 +97,35 @@ export default class App extends Component<{ client: SwarmChat }, State> {
       client.createContactSubscription(),
     ])
     this.setState({ ...appData, publicKey }, () => {
-      this._sub = contactsSub.subscribe(this.onReceiveContactEvent)
+      this._contactSub = contactsSub.subscribe(this.onReceiveContactEvent)
+      this.createChatSubscriptions()
     })
   }
 
-  saveAppData = async () => {
-    const { contacts, publicKey, selectedKey, username } = this.state
+  createChatSubscriptions = async () => {
+    await Promise.all(
+      Object.values(this.state.contacts)
+        // $FlowFixMe: Object.values() losing type
+        .filter(c => c.type === 'added')
+        // $FlowFixMe: Object.values() losing type
+        .map(this.createChatSubscription),
+    )
+  }
+
+  createChatSubscription = async (c: Contact): Subscription => {
+    const chat = await this.props.client.createChatSubscription(c.key, c.topic)
+    const subscription = chat.subscribe(this.onReceiveChatEvent)
+    this._chatSubs[c.key] = subscription
+    return subscription
+  }
+
+  async saveAppData() {
+    const { chats, contacts, publicKey, selectedKey, username } = this.state
     if (publicKey == null) {
       console.warn('Cannot save app data before public key is known')
     } else {
       try {
-        await setAppData(publicKey, { contacts, selectedKey, username })
+        await setAppData(publicKey, { chats, contacts, selectedKey, username })
       } catch (err) {
         console.warn(err)
       }
@@ -113,53 +136,116 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     this.setup()
   }
 
+  componentDidUpdate() {
+    this.saveAppData()
+  }
+
   componentWillUnmount() {
-    if (this._sub != null) {
-      this._sub.unsubscribe()
+    // $FlowFixMe: Object.values() losing type
+    Object.values(this._chatSubs).map(sub => sub.unsubscribe())
+    if (this._contactSub != null) {
+      this._contactSub.unsubscribe()
     }
   }
 
-  onReceiveContactEvent = (ev: IncomingContactEvent) => {
-    console.log('received contact event', ev)
-    this.setState(({ contacts }) => {
-      const existing = contacts[ev.key]
-      if (
-        ev.type === 'contact_request' &&
-        (existing == null || existing.type === 'received_pending')
-      ) {
-        // New contact or update existing with new payload
+  onReceiveChatEvent = (ev: IncomingChatEvent) => {
+    this.setState(({ chats }) => {
+      const id = sum(ev)
+      const existing = chats[ev.key]
+      if (existing == null) {
         return {
-          contacts: {
-            ...contacts,
+          chats: {
+            ...chats,
             [ev.key]: {
-              key: ev.key,
-              type: 'received_pending',
-              topic: ev.payload.topic,
-              username: ev.payload.username,
-              address: ev.payload.overlay_address,
+              messages: [
+                {
+                  id,
+                  sender: ev.key,
+                  text: ev.payload.text,
+                  timestamp: ev.utc_timestamp,
+                },
+              ],
+              pointer: 0,
             },
           },
         }
-      } else if (
-        ev.type === 'contact_response' &&
-        existing != null &&
-        (existing.type === 'sent_declined' || existing.type === 'sent_pending')
-      ) {
-        // Response from contact, set type to "added" or "sent_declined" accordingly
+      } else {
+        // Very basic deduplication logic, only checking latest message
+        const latestMessage = existing.messages[existing.messages.length - 1]
+        if (latestMessage !== null && latestMessage.id === id) {
+          return null
+        }
         return {
-          contacts: {
-            ...contacts,
+          chats: {
+            ...chats,
             [ev.key]: {
               ...existing,
-              type: ev.payload.contact === true ? 'added' : 'sent_declined',
-              username: ev.payload.username,
-              address: ev.payload.overlay_address,
+              messages: [
+                ...existing.messages,
+                {
+                  id,
+                  sender: ev.key,
+                  text: ev.payload.text,
+                  timestamp: ev.utc_timestamp,
+                },
+              ],
             },
           },
         }
       }
-      return null
-    }, this.saveAppData)
+    })
+  }
+
+  onReceiveContactEvent = (ev: IncomingContactEvent) => {
+    let createChat
+    this.setState(
+      ({ contacts }) => {
+        const existing = contacts[ev.key]
+        if (
+          ev.type === 'contact_request' &&
+          (existing == null || existing.type === 'received_pending')
+        ) {
+          // New contact or update existing with new payload
+          return {
+            contacts: {
+              ...contacts,
+              [ev.key]: {
+                key: ev.key,
+                type: 'received_pending',
+                topic: ev.payload.topic,
+                username: ev.payload.username,
+                address: ev.payload.overlay_address,
+              },
+            },
+          }
+        } else if (
+          ev.type === 'contact_response' &&
+          existing != null &&
+          (existing.type === 'sent_declined' ||
+            existing.type === 'sent_pending')
+        ) {
+          // Response from contact, set type to "added" or "sent_declined" accordingly
+          const contact = {
+            ...existing,
+            type: ev.payload.contact === true ? 'added' : 'sent_declined',
+            username: ev.payload.username,
+            address: ev.payload.overlay_address,
+          }
+          if (contact.type === 'added') {
+            createChat = contact
+          }
+          return {
+            contacts: { ...contacts, [ev.key]: contact },
+          }
+        }
+        return null
+      },
+      async () => {
+        if (createChat != null) {
+          await this.createChatSubscription(createChat)
+        }
+      },
+    )
   }
 
   onChangeContactKey = (value: string) => {
@@ -168,6 +254,43 @@ export default class App extends Component<{ client: SwarmChat }, State> {
 
   onChangeUsername = (value: string) => {
     this.setState({ username: value })
+  }
+
+  onSendChatMessage = async (contactKey: hex, text: string) => {
+    const contact = this.state.contacts[(contactKey: string)]
+    if (contact == null) {
+      throw new Error('Unknown contact')
+    }
+    if (contact.type !== 'added') {
+      throw new Error('Cannot send message until contact is added')
+    }
+    if (this._chatSubs[contactKey] == null) {
+      throw new Error('Chat subscription does not exist')
+    }
+
+    await this.props.client.sendChatMessage(contactKey, contact.topic, { text })
+
+    this.setState(({ chats, publicKey }) => {
+      const chat = chats[contactKey] || { messages: [], pointer: 0 }
+
+      const message = {
+        id: undefined,
+        sender: publicKey,
+        text,
+        timestamp: Date.now(),
+      }
+      message.id = sum(message)
+
+      return {
+        chats: {
+          ...chats,
+          [contactKey]: {
+            ...chat,
+            messages: [...chat.messages, message],
+          },
+        },
+      }
+    })
   }
 
   onSubmitContactRequest = async () => {
@@ -192,20 +315,17 @@ export default class App extends Component<{ client: SwarmChat }, State> {
         hexType(contactKey),
         data,
       )
-      this.setState(
-        ({ contacts }) => ({
-          contactKey: '',
-          contacts: {
-            ...contacts,
-            [contactKey]: {
-              key: contactKey,
-              type: 'sent_pending',
-              topic,
-            },
+      this.setState(({ contacts }) => ({
+        contactKey: '',
+        contacts: {
+          ...contacts,
+          [contactKey]: {
+            key: contactKey,
+            type: 'sent_pending',
+            topic,
           },
-        }),
-        this.saveAppData,
-      )
+        },
+      }))
     }
   }
 
@@ -213,20 +333,26 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     await this.props.client.sendContactResponse(key, accepted, {
       username: this.state.username,
     })
-    // TODO: if accepted, also join shared topic
 
-    this.setState(({ contacts }) => {
-      const existing = contacts[key]
-      return {
-        contacts: {
-          ...contacts,
-          [key]: {
-            ...existing,
-            type: accepted ? 'added' : 'received_declined',
+    this.setState(
+      ({ contacts }) => {
+        const existing = contacts[(key: string)]
+        return {
+          contacts: {
+            ...contacts,
+            [key]: {
+              ...existing,
+              type: accepted ? 'added' : 'received_declined',
+            },
           },
-        },
-      }
-    }, this.saveAppData)
+        }
+      },
+      async () => {
+        if (accepted) {
+          await this.createChatSubscription(this.state.contacts[(key: string)])
+        }
+      },
+    )
   }
 
   onOpenInviteModal = () => {
@@ -246,7 +372,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   }
 
   onSelectKey = (selectedKey: hex) => {
-    this.setState({ selectedKey }, this.saveAppData)
+    this.setState({ selectedKey })
   }
 
   onAcceptContact = async () => {
@@ -273,6 +399,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
 
   render() {
     const {
+      chats,
       contactKey,
       contacts,
       inviteErrorMessage,
@@ -287,14 +414,20 @@ export default class App extends Component<{ client: SwarmChat }, State> {
       return <Loader />
     }
 
-    const content = selectedKey ? (
-      <ContactScreen
-        contact={contacts[(selectedKey: string)]}
-        onAcceptContact={this.onAcceptContact}
-        onDeclineContact={this.onDeclineContact}
-        onResendContactRequest={this.onResendContactRequest}
-      />
-    ) : null // TODO: default screen
+    let content = null // TODO: default screen
+    if (selectedKey != null) {
+      const keyStr: string = selectedKey
+      content = (
+        <ContactScreen
+          chat={chats[keyStr]}
+          contact={contacts[keyStr]}
+          onAcceptContact={this.onAcceptContact}
+          onDeclineContact={this.onDeclineContact}
+          onResendContactRequest={this.onResendContactRequest}
+          onSendChatMessage={this.onSendChatMessage}
+        />
+      )
+    }
 
     return (
       <View style={styles.root}>
