@@ -1,6 +1,6 @@
 // @flow
 
-import type { hex } from '@mainframe/utils-hex'
+import { hexType, type hex } from '@mainframe/utils-hex'
 import React, { Component } from 'react'
 import Modal from 'react-modal'
 import {
@@ -12,7 +12,7 @@ import {
 } from 'react-native-web'
 import type { Subscription } from 'rxjs'
 
-import { getAppData } from '../store'
+import { getAppData, setAppData } from '../store'
 import type { Contacts } from '../types'
 
 import type {
@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
 type State = {
   contactKey: string,
   contacts: Contacts,
-  inviteErrorMessage?: ?string,
+  inviteErrorMessage: ?string,
   inviteModalOpen: boolean,
-  publickKey?: hex,
-  selectedKey?: hex,
+  publicKey: ?hex,
+  selectedKey: ?hex,
   settingsModalOpen: boolean,
   username: string,
 }
@@ -76,7 +76,10 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   state = {
     contactKey: '',
     contacts: {},
+    inviteErrorMessage: undefined,
     inviteModalOpen: false,
+    publicKey: undefined,
+    selectedKey: undefined,
     settingsModalOpen: false,
     username: '',
   }
@@ -93,6 +96,19 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     })
   }
 
+  saveAppData = async () => {
+    const { contacts, publicKey, selectedKey, username } = this.state
+    if (publicKey == null) {
+      console.warn('Cannot save app data before public key is known')
+    } else {
+      try {
+        await setAppData(publicKey, { contacts, selectedKey, username })
+      } catch (err) {
+        console.warn(err)
+      }
+    }
+  }
+
   componentDidMount() {
     this.setup()
   }
@@ -104,6 +120,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   }
 
   onReceiveContactEvent = (ev: IncomingContactEvent) => {
+    console.log('received contact event', ev)
     this.setState(({ contacts }) => {
       const existing = contacts[ev.key]
       if (
@@ -142,7 +159,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
         }
       }
       return null
-    })
+    }, this.saveAppData)
   }
 
   onChangeContactKey = (value: string) => {
@@ -171,18 +188,24 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     } else {
       this.setState({ inviteModalOpen: false })
       const data = username.length > 0 ? { username } : undefined
-      const topic = await this.props.client.sendContactRequest(contactKey, data)
-      this.setState(({ contacts }) => ({
-        contactKey: '',
-        contacts: {
-          ...contacts,
-          [contactKey]: {
-            key: contactKey,
-            type: 'sent_pending',
-            topic,
+      const topic = await this.props.client.sendContactRequest(
+        hexType(contactKey),
+        data,
+      )
+      this.setState(
+        ({ contacts }) => ({
+          contactKey: '',
+          contacts: {
+            ...contacts,
+            [contactKey]: {
+              key: contactKey,
+              type: 'sent_pending',
+              topic,
+            },
           },
-        },
-      }))
+        }),
+        this.saveAppData,
+      )
     }
   }
 
@@ -203,7 +226,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
           },
         },
       }
-    })
+    }, this.saveAppData)
   }
 
   onOpenInviteModal = () => {
@@ -223,26 +246,26 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   }
 
   onSelectKey = (selectedKey: hex) => {
-    this.setState({ selectedKey })
+    this.setState({ selectedKey }, this.saveAppData)
   }
 
   onAcceptContact = async () => {
     const { selectedKey } = this.state
-    if (selectedKey !== null) {
+    if (selectedKey != null) {
       await this.sendContactResponse(selectedKey, true)
     }
   }
 
   onDeclineContact = async () => {
     const { selectedKey } = this.state
-    if (selectedKey !== null) {
+    if (selectedKey != null) {
       await this.sendContactResponse(selectedKey, false)
     }
   }
 
   onResendContactRequest = async () => {
     const { selectedKey, username } = this.state
-    if (selectedKey !== null) {
+    if (selectedKey != null) {
       const data = username ? { username } : undefined
       await this.props.client.sendContactRequest(selectedKey, data)
     }
@@ -266,7 +289,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
 
     const content = selectedKey ? (
       <ContactScreen
-        contact={contacts[selectedKey]}
+        contact={contacts[(selectedKey: string)]}
         onAcceptContact={this.onAcceptContact}
         onDeclineContact={this.onDeclineContact}
         onResendContactRequest={this.onResendContactRequest}

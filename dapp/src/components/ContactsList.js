@@ -1,5 +1,6 @@
 // @flow
 
+import type { hex } from '@mainframe/utils-hex'
 import React, { PureComponent, Fragment } from 'react'
 import {
   Button,
@@ -72,7 +73,7 @@ export default class ContactsList extends PureComponent<Props> {
     }
 
     const { onSelectKey, selectedKey } = this.props
-    const items = contacts.map((c: Contact) => {
+    const items = contacts.map(c => {
       const isSelected = selectedKey === c.key
       return (
         <TouchableWithoutFeedback
@@ -119,6 +120,7 @@ export default class ContactsList extends PureComponent<Props> {
         received: [],
         sent: [],
       }
+      // $FlowFixMe: Object.values() losing type
       contactsList.forEach((c: Contact) => {
         const group = groups[c.type.split('_')[0]]
         if (group == null) {

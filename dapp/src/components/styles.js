@@ -29,8 +29,4 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonPrimary: {
-    backgroundColor: COLORS.BACKGROUND_PRIMARY,
-    color: COLORS.TEXT_PRIMARY,
-  },
 })

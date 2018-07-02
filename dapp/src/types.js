@@ -17,4 +17,4 @@ export type Contact = {
   address?: ?hex,
 }
 
-export type Contacts = { [key: hex]: Contact }
+export type Contacts = { [key: string]: Contact }

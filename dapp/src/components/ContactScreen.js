@@ -18,9 +18,9 @@ const styles = StyleSheet.create({
 
 type Props = {
   contact: Contact,
-  onAcceptContact: () => void,
-  onDeclineContact: () => void,
-  onResendContactRequest: () => void,
+  onAcceptContact: () => Promise<void>,
+  onDeclineContact: () => Promise<void>,
+  onResendContactRequest: () => Promise<void>,
 }
 
 export default class ContactScreen extends PureComponent<Props> {

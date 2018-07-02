@@ -32,19 +32,21 @@ const styles = StyleSheet.create({
 type Step = 'input_url' | 'ready' | 'setup' | 'setup_failed'
 
 type State = {
-  client?: SwarmChat,
-  errorMessage?: ?string,
+  client: ?SwarmChat,
+  errorMessage: ?string,
   step: Step,
   url: string,
 }
 
 export default class SwarmChatApp extends Component<{}, State> {
   state = {
+    client: undefined,
+    errorMessage: undefined,
     step: 'setup',
     url: 'ws://localhost:8546',
   }
 
-  async createClient(url): boolean {
+  async createClient(url: string): Promise<boolean> {
     try {
       const client = new SwarmChat(url)
       await client.getOwnInfo()
@@ -89,7 +91,7 @@ export default class SwarmChatApp extends Component<{}, State> {
     if (step === 'setup') {
       return <Loader />
     }
-    if (step === 'ready') {
+    if (step === 'ready' && client != null) {
       return <App client={client} />
     }
 

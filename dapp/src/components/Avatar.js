@@ -1,7 +1,7 @@
 // @flow
 
 import type { hex } from '@mainframe/utils-hex'
-import React, { Component } from 'react'
+import React from 'react'
 import Blockies from 'react-blockies'
 import { StyleSheet, View } from 'react-native-web'
 
@@ -27,19 +27,13 @@ type Props = {
   size?: AvatarSize,
 }
 
-export default class Avatar extends Component<Props> {
-  static defaultProps = {
-    size: 'small',
-  }
-
-  render() {
-    const { publicKey, size } = this.props
-    const avatarSize = AVATAR_SIZE[size] || AVATAR_SIZE.small
-    return (
-      <View
-        style={[styles.container, { width: avatarSize, height: avatarSize }]}>
-        <Blockies seed={publicKey} size={8} scale={Math.ceil(avatarSize / 8)} />
-      </View>
-    )
-  }
+const Avatar = ({ publicKey, size }: Props) => {
+  const avatarSize = AVATAR_SIZE[size || 'small'] || AVATAR_SIZE.small
+  return (
+    <View style={[styles.container, { width: avatarSize, height: avatarSize }]}>
+      <Blockies seed={publicKey} size={8} scale={Math.ceil(avatarSize / 8)} />
+    </View>
+  )
 }
+
+export default Avatar

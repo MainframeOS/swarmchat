@@ -77,7 +77,7 @@ export default class SwarmChat {
   _pss: PssAPI
   _ownInfo: ?OwnInfo
 
-  constructor(url) {
+  constructor(url: string) {
     this._pss = new PssAPI(createWebSocketRPC(url))
   }
 
@@ -85,8 +85,8 @@ export default class SwarmChat {
     return this._ownInfo != null
   }
 
-  async getOwnInfo(): Promise<OwnData> {
-    if (!this.hasOwnInfo) {
+  async getOwnInfo(): Promise<OwnInfo> {
+    if (this._ownInfo == null) {
       const [publicKey, overlayAddress] = await Promise.all([
         this._pss.getPublicKey(),
         this._pss.baseAddr(),
@@ -106,11 +106,13 @@ export default class SwarmChat {
         return (
           event.data.protocol === PROTOCOL &&
           ((event.data.type === 'contact_request' &&
+            event.data.payload != null &&
             event.data.payload.topic != null) ||
             event.data.type === 'contact_response')
         )
       }),
       map(
+        // $FlowFixMe: polymorphic type
         (event: IncomingProtocolEvent): IncomingContactEvent => ({
           key: event.key,
           type: event.data.type,
@@ -147,13 +149,16 @@ export default class SwarmChat {
     accept: boolean,
     data?: { username?: string } = {},
   ): Promise<void> {
-    const payload = { contact: accept }
+    let payload
     if (accept) {
       const ownInfo = await this.getOwnInfo()
-      payload.overlay_address = ownInfo.overlayAddress
-      if (data.username != null) {
-        payload.username = data.username
+      payload = {
+        contact: true,
+        overlay_address: ownInfo.overlayAddress,
+        username: data.username,
       }
+    } else {
+      payload = { contact: false }
     }
     const topic = await this._pss.stringToTopic(key)
     await this._pss.setPeerPublicKey(key, topic)
