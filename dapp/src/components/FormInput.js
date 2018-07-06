@@ -1,6 +1,6 @@
 // @flow
 
-import React from 'react'
+import React, { forwardRef } from 'react'
 import { StyleSheet, TextInput } from 'react-native-web'
 
 import { COLORS } from './styles'
@@ -15,8 +15,8 @@ const styles = StyleSheet.create({
   },
 })
 
-const FormInput = ({ style, ...props }: Object) => (
-  <TextInput style={[styles.input, style]} {...props} />
-)
+const FormInput = forwardRef(({ style, ...props }: Object, ref: any) => (
+  <TextInput ref={ref} style={[styles.input, style]} {...props} />
+))
 
 export default FormInput

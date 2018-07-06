@@ -39,7 +39,6 @@ export type ContactRequestPayload = {
   topic: hex,
   overlay_address?: hex,
   username?: string,
-  message?: string,
 }
 
 export type IncomingContactRequest = {
@@ -78,7 +77,7 @@ const createRandomString = (): string => {
 }
 
 export const createPssMessage = (type: string, payload?: Object): hex => {
-  return encodeHex(JSON.stringify(createEvent(PROTOCOL, type, payload)))
+  return encodeHex(JSON.stringify(createEvent(type, payload)))
 }
 
 export const decodePssEvent = (data: PssEvent): IncomingProtocolEvent => ({
@@ -120,11 +119,7 @@ export default class SwarmChat {
     return sub.pipe(
       map(decodePssEvent),
       filter((event: IncomingProtocolEvent) => {
-        return (
-          event.data.protocol === PROTOCOL &&
-          event.data.type === 'chat_message' &&
-          event.data.payload != null
-        )
+        return event.data.type === 'chat_message' && event.data.payload != null
       }),
       map(
         // $FlowFixMe: polymorphic type
@@ -146,11 +141,10 @@ export default class SwarmChat {
       map(decodePssEvent),
       filter((event: IncomingProtocolEvent) => {
         return (
-          event.data.protocol === PROTOCOL &&
-          ((event.data.type === 'contact_request' &&
+          (event.data.type === 'contact_request' &&
             event.data.payload != null &&
             event.data.payload.topic != null) ||
-            event.data.type === 'contact_response')
+          event.data.type === 'contact_response'
         )
       }),
       map(

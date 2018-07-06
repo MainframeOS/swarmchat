@@ -57,13 +57,51 @@ type Props = {
 
 type State = {
   messageText: string,
+  scrollToEnd: boolean,
 }
 
 export default class ContactScreen extends PureComponent<Props, State> {
+  inputRef = createRef()
   messagesViewRef = createRef()
 
   state = {
     messageText: '',
+    scrollToEnd: true,
+  }
+
+  get isScrolledToEnd() {
+    if (this.messagesViewRef.current == null) {
+      return false
+    }
+    const containerNode = this.messagesViewRef.current.getScrollableNode()
+    const containerRect = containerNode.getBoundingClientRect()
+    const contentsRect = this.messagesViewRef.current
+      .getInnerViewNode()
+      .getBoundingClientRect()
+    return (
+      containerRect.height + containerNode.scrollTop === contentsRect.height
+    )
+  }
+
+  componentDidMount() {
+    if (this.messagesViewRef.current != null) {
+      this.messagesViewRef.current.scrollToEnd({ animated: false })
+    }
+  }
+
+  componentDidUpdate() {
+    if (this.state.scrollToEnd) {
+      // scrollToEnd() needs to be called after a timeout to ensure the view size has been updated before trying to scroll
+      setTimeout(() => {
+        if (this.messagesViewRef.current != null) {
+          this.messagesViewRef.current.scrollToEnd()
+        }
+      }, 0)
+    }
+  }
+
+  onScroll = () => {
+    this.setState({ scrollToEnd: this.isScrolledToEnd })
   }
 
   onChangeMessage = (value: string) => {
@@ -76,7 +114,11 @@ export default class ContactScreen extends PureComponent<Props, State> {
       return
     }
     this.props.onSendChatMessage(this.props.contact.key, messageText)
-    this.setState({ messageText: '' })
+    this.setState({ messageText: '', scrollToEnd: true }, () => {
+      if (this.inputRef.current != null) {
+        this.inputRef.current.focus()
+      }
+    })
   }
 
   render() {
@@ -109,10 +151,10 @@ export default class ContactScreen extends PureComponent<Props, State> {
 
     switch (contact.type) {
       case 'added':
-        // TODO: render chat view
         return (
           <View style={styles.chatView}>
             <ScrollView
+              onScroll={this.onScroll}
               ref={this.messagesViewRef}
               style={styles.chatMessagesView}>
               {messages}
@@ -120,8 +162,10 @@ export default class ContactScreen extends PureComponent<Props, State> {
             <View style={styles.chatSendView}>
               <View style={styles.chatSendInputView}>
                 <FormInput
+                  autoFocus
                   onChangeText={this.onChangeMessage}
                   onSubmitEditing={this.onSubmitMessage}
+                  ref={this.inputRef}
                   style={styles.chatInput}
                   value={messageText}
                 />

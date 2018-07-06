@@ -5687,18 +5687,18 @@ react-lifecycles-compat@^3.0.0:
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/react-lifecycles-compat/-/react-lifecycles-compat-3.0.4.tgz#4f1a273afdfc8f3488a8c516bfda78f872352362"
 
-react-modal@^3.4.5:
-  version "3.4.5"
-  resolved "https://registry.yarnpkg.com/react-modal/-/react-modal-3.4.5.tgz#75a7eefb8f4c8247278d5ce1c41249d7785d9f69"
+react-modal@^3.5.1:
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/react-modal/-/react-modal-3.5.1.tgz#33d38527def90ea324848f7d63e53acc4468a451"
   dependencies:
     exenv "^1.2.0"
     prop-types "^15.5.10"
     react-lifecycles-compat "^3.0.0"
     warning "^3.0.0"
 
-react-native-web@^0.8.4:
-  version "0.8.6"
-  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.8.6.tgz#86242909829b971e44d22b21a2d2cf3815cc0bf9"
+react-native-web@^0.8.7:
+  version "0.8.7"
+  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.8.7.tgz#df6a86af5ed83cd57ce8e5504632d2d4d9d1c620"
   dependencies:
     array-find-index "^1.0.2"
     create-react-class "^15.6.2"
