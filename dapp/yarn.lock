@@ -2,45 +2,45 @@
 # yarn lockfile v1
 
 
-"@mainframe/rpc-base@^0.1.0":
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/@mainframe/rpc-base/-/rpc-base-0.1.1.tgz#e1df2aaebb895defc056610849e72cfa347dfde6"
+"@mainframe/rpc-base@^0.1.1":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@mainframe/rpc-base/-/rpc-base-0.1.2.tgz#16997cd797618b5a384a41405562c20e419e91f7"
   dependencies:
-    "@mainframe/utils-id" "^0.1.0"
+    "@mainframe/utils-id" "^0.1.1"
 
-"@mainframe/rpc-error@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@mainframe/rpc-error/-/rpc-error-0.1.0.tgz#a2fad1a88198fddf0c0e3ba9a46fb2e5e70eca81"
+"@mainframe/rpc-error@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@mainframe/rpc-error/-/rpc-error-0.1.1.tgz#fe7c00bc96079356662992d9bd553c116e12fcee"
   dependencies:
     es6-error "^4.1.1"
 
-"@mainframe/rpc-stream@^0.2.0":
-  version "0.2.3"
-  resolved "https://registry.yarnpkg.com/@mainframe/rpc-stream/-/rpc-stream-0.2.3.tgz#2008036321f2b7e17d0a7b0964e139ebf6a068e7"
+"@mainframe/rpc-stream@^0.2.4":
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/@mainframe/rpc-stream/-/rpc-stream-0.2.4.tgz#603337f11f9c4e16171f1848e52b077d74f35c30"
   dependencies:
-    "@mainframe/rpc-base" "^0.1.0"
-    "@mainframe/rpc-error" "^0.1.0"
+    "@mainframe/rpc-base" "^0.1.1"
+    "@mainframe/rpc-error" "^0.1.1"
 
-"@mainframe/rpc-ws-browser@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@mainframe/rpc-ws-browser/-/rpc-ws-browser-0.2.0.tgz#3e5ef2ff276f95e41b0c1ec9aa0550bf1c720214"
+"@mainframe/rpc-ws-browser@^0.2.2":
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/@mainframe/rpc-ws-browser/-/rpc-ws-browser-0.2.2.tgz#9dd8f6247a171691ce455cd7f479063c97337a4d"
   dependencies:
-    "@mainframe/rpc-stream" "^0.2.0"
-    "@mainframe/transport-ws-browser" "^0.2.0"
+    "@mainframe/rpc-stream" "^0.2.4"
+    "@mainframe/transport-ws-browser" "^0.2.1"
 
-"@mainframe/transport-ws-browser@^0.2.0":
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/@mainframe/transport-ws-browser/-/transport-ws-browser-0.2.0.tgz#bdfde196aae4c50b581afd404440291fc9a60c89"
+"@mainframe/transport-ws-browser@^0.2.1":
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/@mainframe/transport-ws-browser/-/transport-ws-browser-0.2.1.tgz#f2b67a87930cb854588c59a926aeb18c19ca2bef"
 
-"@mainframe/utils-hex@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@mainframe/utils-hex/-/utils-hex-0.1.0.tgz#c266d71767eebbf2715c0c6ec380b2e0b0fca585"
+"@mainframe/utils-hex@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@mainframe/utils-hex/-/utils-hex-0.1.1.tgz#2ec97e3b7358960c1b39ee60fc5a17986a3921ae"
 
-"@mainframe/utils-id@^0.1.0":
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/@mainframe/utils-id/-/utils-id-0.1.0.tgz#c993707b866a98642e3d9f27a0377cf78021b0af"
+"@mainframe/utils-id@^0.1.1":
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/@mainframe/utils-id/-/utils-id-0.1.1.tgz#5d17ab69b4af712b98b35e331a5627f7fcb700fb"
   dependencies:
-    nanoid "^1.0.2"
+    nanoid "^1.0.7"
 
 abab@^1.0.3:
   version "1.0.4"
@@ -2242,11 +2242,11 @@ entities@~1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/entities/-/entities-1.1.1.tgz#6e5c2d0a5621b5dadaecef80b90edfb5cd7772f0"
 
-erebos-api-pss@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/erebos-api-pss/-/erebos-api-pss-0.3.0.tgz#163aaf989fd503050ed67fd5d1afde5fed3c8f2a"
+erebos-api-pss@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/erebos-api-pss/-/erebos-api-pss-0.3.1.tgz#e9237fef693bc19e687f988a0855a2be043b27ae"
   dependencies:
-    "@mainframe/utils-hex" "^0.1.0"
+    "@mainframe/utils-hex" "^0.1.1"
 
 errno@^0.1.3, errno@~0.1.7:
   version "0.1.7"
@@ -2869,9 +2869,9 @@ flatten@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/flatten/-/flatten-1.0.2.tgz#dae46a9d78fbe25292258cc1e780a41d95c03782"
 
-flow-bin@^0.75.0:
-  version "0.75.0"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.75.0.tgz#b96d1ee99d3b446a3226be66b4013224ce9df260"
+flow-bin@^0.76.0:
+  version "0.76.0"
+  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.76.0.tgz#eb00036991c3abc106743fcbc7ee321f02aa4faa"
 
 follow-redirects@^1.0.0:
   version "1.5.0"
@@ -4621,9 +4621,9 @@ nan@^2.9.2:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.10.0.tgz#96d0cd610ebd58d4b4de9cc0c6828cda99c7548f"
 
-nanoid@^1.0.2:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-1.0.4.tgz#29ffb9a4fcbb671fca98da5e14e5c5e21ba76cd4"
+nanoid@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-1.0.7.tgz#23857a9514ae8efb7374221b923a2b92be3f74f2"
 
 nanomatch@^1.2.9:
   version "1.2.13"
@@ -5696,9 +5696,9 @@ react-modal@^3.5.1:
     react-lifecycles-compat "^3.0.0"
     warning "^3.0.0"
 
-react-native-web@^0.8.7:
-  version "0.8.7"
-  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.8.7.tgz#df6a86af5ed83cd57ce8e5504632d2d4d9d1c620"
+react-native-web@^0.8.8:
+  version "0.8.8"
+  resolved "https://registry.yarnpkg.com/react-native-web/-/react-native-web-0.8.8.tgz#65e7fd866d26eacbeebe6de53fa106df2b11a2de"
   dependencies:
     array-find-index "^1.0.2"
     create-react-class "^15.6.2"
