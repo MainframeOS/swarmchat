@@ -146,7 +146,7 @@ export default class ContactsList extends PureComponent<Props> {
         {contents}
         <View style={styles.inviteButtonView}>
           <Button
-            color={COLORS.BUTTON_PRIMARY}
+            color={COLORS.BLUE_SWARM}
             onPress={onOpenInviteModal}
             title="Add contact"
           />

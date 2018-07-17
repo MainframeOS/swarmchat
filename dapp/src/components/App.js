@@ -59,7 +59,15 @@ const styles = StyleSheet.create({
   modalSection: {
     paddingVertical: 5,
   },
+  spacer: {
+    height: 10,
+  },
 })
+
+type Props = {
+  client: SwarmChat,
+  onDisconnect: () => void,
+}
 
 type State = {
   chats: Chats,
@@ -73,21 +81,23 @@ type State = {
   username: string,
 }
 
-export default class App extends Component<{ client: SwarmChat }, State> {
+const DEFAULT_STATE: State = {
+  chats: {},
+  contactKey: '',
+  contacts: {},
+  inviteErrorMessage: undefined,
+  inviteModalOpen: false,
+  publicKey: undefined,
+  selectedKey: undefined,
+  settingsModalOpen: false,
+  username: '',
+}
+
+export default class App extends Component<Props, State> {
   _chatSubs: { [key: string]: Subscription } = {}
   _contactSub: ?Subscription
 
-  state = {
-    chats: {},
-    contactKey: '',
-    contacts: {},
-    inviteErrorMessage: undefined,
-    inviteModalOpen: false,
-    publicKey: undefined,
-    selectedKey: undefined,
-    settingsModalOpen: false,
-    username: '',
-  }
+  state = DEFAULT_STATE
 
   async setup() {
     const { client } = this.props
@@ -148,6 +158,13 @@ export default class App extends Component<{ client: SwarmChat }, State> {
     }
   }
 
+  onResetAppData = () => {
+    const { publicKey } = this.state
+    this.setState({ ...DEFAULT_STATE, publicKey }, () => {
+      setAppData(publicKey)
+    })
+  }
+
   onReceiveChatEvent = (ev: IncomingChatEvent) => {
     this.setState(({ chats }) => {
       const id = sum(ev)
@@ -170,9 +187,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
           },
         }
       } else {
-        // Very basic deduplication logic, only checking latest message
-        const latestMessage = existing.messages[existing.messages.length - 1]
-        if (latestMessage !== null && latestMessage.id === id) {
+        if (existing.messages.some(msg => msg.id === id)) {
           return null
         }
         return {
@@ -398,6 +413,7 @@ export default class App extends Component<{ client: SwarmChat }, State> {
   }
 
   render() {
+    const { onDisconnect } = this.props
     const {
       chats,
       contactKey,
@@ -486,9 +502,21 @@ export default class App extends Component<{ client: SwarmChat }, State> {
             <FormInput onChangeText={this.onChangeUsername} value={username} />
           </View>
           <Button
-            color={COLORS.BLUE_SWARM}
+            color={COLORS.BUTTON_PRIMARY}
             onPress={this.onCloseSettingsModal}
             title="Close"
+          />
+          <View style={styles.spacer} />
+          <Button
+            color={COLORS.BLUE_SWARM}
+            onPress={this.onResetAppData}
+            title="Reset application data"
+          />
+          <View style={styles.spacer} />
+          <Button
+            color={COLORS.BLUE_SWARM}
+            onPress={onDisconnect}
+            title="Disconnect from Swarm node"
           />
         </Modal>
       </View>

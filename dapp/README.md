@@ -23,7 +23,7 @@ After having dowloaded/pulled the project, you can simply open the `build/index.
 npx serve -s build
 ```
 
-### Example using Python
+#### Example using Python
 
 ```sh
 cd build && python -m SimpleHTTPServer

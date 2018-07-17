@@ -38,13 +38,15 @@ type State = {
   url: string,
 }
 
+const DEFAULT_STATE: State = {
+  client: undefined,
+  errorMessage: undefined,
+  step: 'setup',
+  url: 'ws://localhost:8546',
+}
+
 export default class SwarmChatApp extends Component<{}, State> {
-  state = {
-    client: undefined,
-    errorMessage: undefined,
-    step: 'setup',
-    url: 'ws://localhost:8546',
-  }
+  state = DEFAULT_STATE
 
   async createClient(url: string): Promise<boolean> {
     try {
@@ -81,6 +83,10 @@ export default class SwarmChatApp extends Component<{}, State> {
     }
   }
 
+  onReset = () => {
+    this.setState({ ...DEFAULT_STATE, step: 'input_url', url: this.state.url })
+  }
+
   componentDidMount() {
     this.setup()
   }
@@ -92,7 +98,7 @@ export default class SwarmChatApp extends Component<{}, State> {
       return <Loader />
     }
     if (step === 'ready' && client != null) {
-      return <App client={client} />
+      return <App client={client} onDisconnect={this.onReset} />
     }
 
     return (
