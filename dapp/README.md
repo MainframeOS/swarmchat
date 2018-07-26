@@ -9,7 +9,7 @@ The following instructions document various ways to access the app assets.
 
 ### Using Swarm
 
-A version of the app is deployed to Swarm with the hash `19abdd0249735db7dcfa3b39464064173014001a1de1f3ee39022ea6a5e6868d` and can be accessed using the [Swarm gateway](http://swarm-gateways.net/bzz:/19abdd0249735db7dcfa3b39464064173014001a1de1f3ee39022ea6a5e6868d/).
+A version of the app is deployed to Swarm with the hash `a1ffda5a4a0865293349d63f3f400e7e0ae566c8468ce27daeb7678efbc64f14` and can be accessed using the [Swarm gateway](http://swarm-gateways.net/bzz:/a1ffda5a4a0865293349d63f3f400e7e0ae566c8468ce27daeb7678efbc64f14/).
 More recent versions might be deployed with other hashes.
 
 ### Using a local static server

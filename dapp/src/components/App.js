@@ -188,6 +188,7 @@ export default class App extends Component<Props, State> {
         }
       } else {
         if (existing.messages.some(msg => msg.id === id)) {
+          console.warn('duplicate message', ev)
           return null
         }
         return {
