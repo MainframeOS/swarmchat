@@ -1,20 +1,11 @@
 # SwarmChat demo app
 
-Simple demo chat app for [Postal Services over Swarm](https://swarm-guide.readthedocs.io/en/docs-overhaul/pss.html).
+Simple demo chat app for [Postal Services over Swarm](https://swarm-guide.readthedocs.io/en/latest/pss.html).
 
 ## Running the demo
 
 A local Swarm node with WebSocket APIs is required for the app to access PSS.
-The following instructions document various ways to access the app assets.
-
-### Using Swarm
-
-A version of the app is deployed to Swarm with the hash `a1ffda5a4a0865293349d63f3f400e7e0ae566c8468ce27daeb7678efbc64f14` and can be accessed using the [Swarm gateway](http://swarm-gateways.net/bzz:/a1ffda5a4a0865293349d63f3f400e7e0ae566c8468ce27daeb7678efbc64f14/).
-More recent versions might be deployed with other hashes.
-
-### Using a local static server
-
-Assets are located in the `build` folder.
+The SwarmChat app assets are located in the `build` folder.
 After having dowloaded/pulled the project, you can simply open the `build/index.html` file in your browser, or start a static HTTP server for it (which might be needed depending on the CORS setup of your local Swarm node).
 
 #### Example using node (npx and serve)

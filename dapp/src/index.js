@@ -1,11 +1,12 @@
-import React from 'react'
-import { render } from 'react-dom'
 import Modal from 'react-modal'
+import { AppRegistry } from 'react-native-web'
 
 import './index.css'
 import SwarmChat from './components/SwarmChat'
 
-const el = document.getElementById('root')
+const rootTag = document.getElementById('root')
 
-Modal.setAppElement(el)
-render(<SwarmChat />, el)
+Modal.setAppElement(rootTag)
+
+AppRegistry.registerComponent('App', () => SwarmChat)
+AppRegistry.runApplication('App', { rootTag })

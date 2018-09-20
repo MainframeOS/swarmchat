@@ -1,21 +1,18 @@
 // @flow
 
-import createWebSocketRPC from '@mainframe/rpc-ws-browser'
-import { decodeHex, encodeHex, type hex } from '@mainframe/utils-hex'
-import PssAPI from 'erebos-api-pss'
+import type { PssEvent } from '@erebos/api-pss'
+import {
+  SwarmClient,
+  decodeHex,
+  encodeHex,
+  type hex,
+} from '@erebos/swarm-browser'
 import type { Observable } from 'rxjs'
 import { map, filter } from 'rxjs/operators'
 
 import { createEvent, type SwarmEvent } from './SwarmEvent'
 
 export const PROTOCOL = 'swarmchat/v1'
-
-// TODO: move to erebos-api-pss
-export type PssEvent = {
-  Key: hex,
-  Asym: boolean,
-  Msg: hex,
-}
 
 export type IncomingProtocolEvent = {
   key: hex,
@@ -86,11 +83,11 @@ export const decodePssEvent = (data: PssEvent): IncomingProtocolEvent => ({
 })
 
 export default class SwarmChat {
-  _pss: PssAPI
+  _client: SwarmClient
   _ownInfo: ?OwnInfo
 
   constructor(url: string) {
-    this._pss = new PssAPI(createWebSocketRPC(url))
+    this._client = new SwarmClient({ pss: url })
   }
 
   get hasOwnInfo(): boolean {
@@ -100,8 +97,8 @@ export default class SwarmChat {
   async getOwnInfo(): Promise<OwnInfo> {
     if (this._ownInfo == null) {
       const [publicKey, overlayAddress] = await Promise.all([
-        this._pss.getPublicKey(),
-        this._pss.baseAddr(),
+        this._client.pss.getPublicKey(),
+        this._client.pss.baseAddr(),
       ])
       this._ownInfo = { publicKey, overlayAddress }
     }
@@ -113,8 +110,8 @@ export default class SwarmChat {
     topic: hex,
   ): Promise<Observable<IncomingChatEvent>> {
     const [sub] = await Promise.all([
-      this._pss.createTopicSubscription(topic),
-      this._pss.setPeerPublicKey(contactKey, topic),
+      this._client.pss.createTopicSubscription(topic),
+      this._client.pss.setPeerPublicKey(contactKey, topic),
     ])
     return sub.pipe(
       map(decodePssEvent),
@@ -135,8 +132,8 @@ export default class SwarmChat {
 
   async createContactSubscription(): Promise<Observable<IncomingContactEvent>> {
     const { publicKey } = await this.getOwnInfo()
-    const topic = await this._pss.stringToTopic(publicKey)
-    const sub = await this._pss.createTopicSubscription(topic)
+    const topic = await this._client.pss.stringToTopic(publicKey)
+    const sub = await this._client.pss.createTopicSubscription(topic)
     return sub.pipe(
       map(decodePssEvent),
       filter((event: IncomingProtocolEvent) => {
@@ -164,7 +161,7 @@ export default class SwarmChat {
     payload: ChatMessagePayload,
   ): Promise<void> {
     const message = createPssMessage('chat_message', payload)
-    await this._pss.sendAsym(key, topic, message)
+    await this._client.pss.sendAsym(key, topic, message)
   }
 
   async sendContactRequest(
@@ -173,16 +170,16 @@ export default class SwarmChat {
   ): Promise<hex> {
     const [ownInfo, contactTopic, sharedTopic] = await Promise.all([
       this.getOwnInfo(),
-      this._pss.stringToTopic(key),
-      this._pss.stringToTopic(createRandomString()),
+      this._client.pss.stringToTopic(key),
+      this._client.pss.stringToTopic(createRandomString()),
     ])
-    await this._pss.setPeerPublicKey(key, contactTopic)
+    await this._client.pss.setPeerPublicKey(key, contactTopic)
     const message = createPssMessage('contact_request', {
       ...data,
       topic: sharedTopic,
       overlay_address: ownInfo.overlayAddress,
     })
-    await this._pss.sendAsym(key, contactTopic, message)
+    await this._client.pss.sendAsym(key, contactTopic, message)
     return sharedTopic
   }
 
@@ -202,9 +199,9 @@ export default class SwarmChat {
     } else {
       payload = { contact: false }
     }
-    const topic = await this._pss.stringToTopic(key)
-    await this._pss.setPeerPublicKey(key, topic)
+    const topic = await this._client.pss.stringToTopic(key)
+    await this._client.pss.setPeerPublicKey(key, topic)
     const message = createPssMessage('contact_response', payload)
-    await this._pss.sendAsym(key, topic, message)
+    await this._client.pss.sendAsym(key, topic, message)
   }
 }
