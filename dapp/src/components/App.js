@@ -122,7 +122,7 @@ export default class App extends Component<Props, State> {
     )
   }
 
-  createChatSubscription = async (c: Contact): Subscription => {
+  createChatSubscription = async (c: Contact): Promise<Subscription> => {
     const chat = await this.props.client.createChatSubscription(c.key, c.topic)
     const subscription = chat.subscribe(this.onReceiveChatEvent)
     this._chatSubs[c.key] = subscription
@@ -161,7 +161,9 @@ export default class App extends Component<Props, State> {
   onResetAppData = () => {
     const { publicKey } = this.state
     this.setState({ ...DEFAULT_STATE, publicKey }, () => {
-      setAppData(publicKey)
+      if (publicKey != null) {
+        setAppData(publicKey)
+      }
     })
   }
 
@@ -454,7 +456,8 @@ export default class App extends Component<Props, State> {
             style={styles.sidebarHeader}>
             <Avatar publicKey={publicKey} size="large" />
             <Text numberOfLines={1} style={styles.sidebarHeaderText}>
-              &nbsp;{username || publicKey}
+              &nbsp;
+              {username || publicKey}
             </Text>
           </TouchableOpacity>
           <ContactsList

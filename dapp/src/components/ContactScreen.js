@@ -70,14 +70,14 @@ export default class ContactScreen extends PureComponent<Props, State> {
   }
 
   get isScrolledToEnd() {
-    if (this.messagesViewRef.current == null) {
+    const messagesView = this.messagesViewRef.current
+    if (messagesView == null) {
       return false
     }
-    const containerNode = this.messagesViewRef.current.getScrollableNode()
+
+    const containerNode = messagesView.getScrollableNode()
     const containerRect = containerNode.getBoundingClientRect()
-    const contentsRect = this.messagesViewRef.current
-      .getInnerViewNode()
-      .getBoundingClientRect()
+    const contentsRect = messagesView.getInnerViewNode().getBoundingClientRect()
     return (
       containerRect.height + containerNode.scrollTop === contentsRect.height
     )

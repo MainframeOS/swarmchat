@@ -87,7 +87,7 @@ export default class SwarmChat {
   _ownInfo: ?OwnInfo
 
   constructor(url: string) {
-    this._client = new SwarmClient({ pss: url })
+    this._client = new SwarmClient({ ws: url })
   }
 
   get hasOwnInfo(): boolean {

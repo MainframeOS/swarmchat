@@ -29,12 +29,12 @@ The following scripts are exposed:
 - `npm install` to install the dependencies (must be done first).
 - `npm start` to run the app locally and watch for changes.
 - `npm run-script build` to build the assets into the `build` folder.
+- `npm run-script upload` to upload the assets to the local Swarm node.
 
 ### Publishing a new version
 
 1.  Run `npm run-script build` to build the app contents.
-1.  Edit the `build/index.html` file to remove the leading `/` in the assets URLs, ex `/static/js/main.a60f8906.js` should be changed to `static/js/main.a60f8906.js`.
-1.  Run `swarm --defaultpath ./build/index.html --recursive up ./build` to upload the contents to Swarm.
+1.  Run `npm run-script upload` to upload the contents to the local Swarm node.
 1.  Use the returned hash to access the app using the `bzz` protocol.
 
 ## License
