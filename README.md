@@ -28,16 +28,16 @@ The following scripts are exposed:
 
 - `npm install` to install the dependencies (must be done first).
 - `npm start` to run the app locally and watch for changes.
-- `npm run-script build` to build the assets into the `build` folder.
-- `npm run-script upload` to upload the assets to the local Swarm node.
+- `npm run build` to build the assets into the `build` folder.
+- `npm run upload` to upload the assets to the local Swarm node.
 
 ### Publishing a new version
 
-1.  Run `npm run-script build` to build the app contents.
-1.  Run `npm run-script upload` to upload the contents to the local Swarm node.
+1.  Run `npm run build` to build the app contents.
+1.  Run `npm run upload` to upload the contents to the local Swarm node.
 1.  Use the returned hash to access the app using the `bzz` protocol.
 
 ## License
 
 MIT.\
-See [LICENSE](../LICENSE) file.
+See [LICENSE](LICENSE) file.

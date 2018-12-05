@@ -1,6 +1,6 @@
 // @flow
 
-import type { hex } from '@mainframe/utils-hex'
+import type { hexValue } from '@erebos/swarm-browser'
 import React from 'react'
 import Blockies from 'react-blockies'
 import { StyleSheet, View } from 'react-native-web'
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
 export type AvatarSize = $Keys<typeof AVATAR_SIZE>
 
 type Props = {
-  publicKey: hex,
+  publicKey: hexValue,
   size?: AvatarSize,
 }
 

@@ -1,19 +1,19 @@
 // @flow
 
-import type { hex } from '@mainframe/utils-hex'
+import type { hexValue } from '@erebos/swarm-browser'
 
 export type SystemMessageType = 'chat_joined' | 'chat_left'
 
 export type SystemMessage = {
   id: string,
-  sender: hex,
+  sender: hexValue,
   timestamp: number,
   type: SystemMessageType,
 }
 
 export type UserMessage = {
   id: string,
-  sender: hex,
+  sender: hexValue,
   text: string,
   timestamp: number,
 }
@@ -35,11 +35,11 @@ export type ContactState =
   | 'sent_pending'
 
 export type Contact = {
-  key: hex,
+  key: hexValue,
   type: ContactState,
-  topic: hex,
+  topic: hexValue,
   username?: ?string,
-  address?: ?hex,
+  address?: ?hexValue,
 }
 
 export type Contacts = { [key: string]: Contact }

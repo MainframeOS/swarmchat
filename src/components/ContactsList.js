@@ -1,6 +1,6 @@
 // @flow
 
-import type { hex } from '@mainframe/utils-hex'
+import type { hexValue } from '@erebos/swarm-browser'
 import React, { PureComponent, Fragment } from 'react'
 import {
   Button,
@@ -62,8 +62,8 @@ const styles = StyleSheet.create({
 type Props = {
   contacts: Contacts,
   onOpenInviteModal: () => void,
-  onSelectKey: (publicKey: hex) => void,
-  selectedKey?: ?hex,
+  onSelectKey: (publicKey: hexValue) => void,
+  selectedKey?: ?hexValue,
 }
 
 export default class ContactsList extends PureComponent<Props> {

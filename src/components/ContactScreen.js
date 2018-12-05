@@ -1,6 +1,6 @@
 // @flow
 
-import type { hex } from '@mainframe/utils-hex'
+import type { hexValue } from '@erebos/swarm-browser'
 import React, { createRef, PureComponent } from 'react'
 import { Button, ScrollView, StyleSheet, Text, View } from 'react-native-web'
 
@@ -52,7 +52,10 @@ type Props = {
   onAcceptContact: () => Promise<void>,
   onDeclineContact: () => Promise<void>,
   onResendContactRequest: () => Promise<void>,
-  onSendChatMessage: (contactKey: hex, messageText: string) => Promise<void>,
+  onSendChatMessage: (
+    contactKey: hexValue,
+    messageText: string,
+  ) => Promise<void>,
 }
 
 type State = {
@@ -61,8 +64,8 @@ type State = {
 }
 
 export default class ContactScreen extends PureComponent<Props, State> {
-  inputRef = createRef()
-  messagesViewRef = createRef()
+  inputRef = createRef<FormInput>()
+  messagesViewRef = createRef<ScrollView>()
 
   state = {
     messageText: '',

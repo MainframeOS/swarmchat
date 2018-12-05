@@ -1,6 +1,6 @@
 // @flow
 
-import { hexType, type hex } from '@mainframe/utils-hex'
+import { hexValueType, type hexValue } from '@erebos/swarm-browser'
 import sum from 'hash-sum'
 import React, { Component } from 'react'
 import Modal from 'react-modal'
@@ -75,8 +75,8 @@ type State = {
   contacts: Contacts,
   inviteErrorMessage: ?string,
   inviteModalOpen: boolean,
-  publicKey: ?hex,
-  selectedKey: ?hex,
+  publicKey: ?hexValue,
+  selectedKey: ?hexValue,
   settingsModalOpen: boolean,
   username: string,
 }
@@ -274,7 +274,7 @@ export default class App extends Component<Props, State> {
     this.setState({ username: value })
   }
 
-  onSendChatMessage = async (contactKey: hex, text: string) => {
+  onSendChatMessage = async (contactKey: hexValue, text: string) => {
     const contact = this.state.contacts[(contactKey: string)]
     if (contact == null) {
       throw new Error('Unknown contact')
@@ -330,7 +330,7 @@ export default class App extends Component<Props, State> {
       this.setState({ inviteModalOpen: false })
       const data = username.length > 0 ? { username } : undefined
       const topic = await this.props.client.sendContactRequest(
-        hexType(contactKey),
+        hexValueType(contactKey),
         data,
       )
       this.setState(({ contacts }) => ({
@@ -347,7 +347,7 @@ export default class App extends Component<Props, State> {
     }
   }
 
-  sendContactResponse = async (key: hex, accepted: boolean) => {
+  sendContactResponse = async (key: hexValue, accepted: boolean) => {
     await this.props.client.sendContactResponse(key, accepted, {
       username: this.state.username,
     })
@@ -389,7 +389,7 @@ export default class App extends Component<Props, State> {
     this.setState({ settingsModalOpen: false })
   }
 
-  onSelectKey = (selectedKey: hex) => {
+  onSelectKey = (selectedKey: hexValue) => {
     this.setState({ selectedKey })
   }
 
